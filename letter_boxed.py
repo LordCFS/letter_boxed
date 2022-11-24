@@ -35,7 +35,7 @@ for setn in [args.set1, args.set2, args.set3, args.set4]:
 words = list()
 starts = defaultdict(list)
 ends = defaultdict(list)
-G = nx.DiGraph()
+letter_box_graph = nx.DiGraph()
 with open(args.words, 'r') as words_fh:
     for word in words_fh:
         word = word.strip()
@@ -47,31 +47,35 @@ with open(args.words, 'r') as words_fh:
             for index, letter in enumerate(word):
                 if (next_index := index + 1) < word_len:
                     if word[next_index] not in chains[letter]:
-                        # On the same side
+                        # The next letter the same side; skip
                         break
                 else:
                     # Everything checks out
-                    G.add_node(word)
+                    letter_box_graph.add_node(word)
                     words.append(word)
                     starts[word[0]].append(word)
                     ends[word[-1]].append(word)
                     for word_next in starts[word[-1]]:
-                        G.add_edge(word, word_next)
+                        letter_box_graph.add_edge(word, word_next)
                     for word_next in ends[word[0]]:
-                        G.add_edge(word_next, word)
+                        letter_box_graph.add_edge(word_next, word)
 
 def find_pangram_paths(word, pos, total_words):
     print(f'>>> Search paths from {word} {pos}/{total_words}')
     pangrams = list()
-    for y in words:
-        for z in range(args.max):
-            try:
-                for path in nx.all_shortest_paths(G, word, y, z + 1):
-                    leftovers = letters - frozenset(chain(*path))
-                    if not leftovers:
-                        pangrams.append(path)
-            except Exception as exc:
-                pass
+    for last_word in words:
+        try:
+            for path in nx.all_shortest_paths(
+                letter_box_graph,
+                word,
+                last_word,
+                args.max + 1
+            ):
+                leftovers = letters - frozenset(chain(*path))
+                if not leftovers:
+                    pangrams.append(path)
+        except Exception as exc:
+            pass
     return pangrams
 
 pangram_futures = dict()
@@ -84,8 +88,10 @@ with ProcessPoolExecutor(max_workers=args.tasks) as executor:
                 len(words)
             )
 
+wait(pangram_futures.values())
 for word in pangram_futures:
     result = pangram_futures[word].result()
+    pprint(result)
     for pangram in result:
         pangram_path = ' '.join(pangram)
         print(f'<<< {pangram_path}')
