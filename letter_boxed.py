@@ -8,14 +8,6 @@ from time import time
 
 import networkx as nx
 
-def Timer(fn):
-    from time import perf_counter
-    def inner(*args, **kwargs):
-        start = perf_counter()
-        ret = fn(*args, **kwargs)
-        return (perf_counter() - start), ret
-    return inner
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--words', default='/usr/share/dict/words')
 parser.add_argument('--tasks', type=int, default=cpu_count())
