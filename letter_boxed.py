@@ -1,8 +1,8 @@
 #!/usr/bin/env -S python3 -u
 import argparse
-import concurrent.futures
-import itertools
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, wait
+from itertools import chain
 from multiprocessing import cpu_count
 from time import time
 
@@ -68,7 +68,6 @@ def find_pangram_paths(word, pos, total_words):
             try:
                 for path in nx.all_shortest_paths(G, word, y, z + 1):
                     leftovers = letters - frozenset(chain(*path))
-                    print()
                     if not leftovers:
                         pangrams.append(path)
             except Exception as exc:
@@ -76,11 +75,16 @@ def find_pangram_paths(word, pos, total_words):
     return pangrams
 
 pangram_futures = dict()
-with concurrent.futures.ProcessPoolExecutor(max_workers=args.tasks) as executor:
+with ProcessPoolExecutor(max_workers=args.tasks) as executor:
     for index, word in enumerate(words):
-            pangram_futures[word] = executor.submit(find_pangram_paths, word, index + 1, len(words))
+            pangram_futures[word] = executor.submit(
+                find_pangram_paths,
+                word,
+                index + 1,
+                len(words)
+            )
 
-elapsed, ret = Timer(concurrent.futures.wait)(pangram_futures.values())
+elapsed, ret = Timer(wait)(pangram_futures.values())
 print(f'=== Processed {len(words)**2} paths in {elapsed:.8f} seconds')
 for word in pangram_futures:
     result = pangram_futures[word].result()
