@@ -91,7 +91,6 @@ with ProcessPoolExecutor(max_workers=args.tasks) as executor:
 wait(pangram_futures.values())
 for word in pangram_futures:
     result = pangram_futures[word].result()
-    pprint(result)
     for pangram in result:
         pangram_path = ' '.join(pangram)
         print(f'<<< {pangram_path}')
