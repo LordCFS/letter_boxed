@@ -84,8 +84,6 @@ with ProcessPoolExecutor(max_workers=args.tasks) as executor:
                 len(words)
             )
 
-elapsed, ret = Timer(wait)(pangram_futures.values())
-print(f'=== Processed {len(words)**2} paths in {elapsed:.8f} seconds')
 for word in pangram_futures:
     result = pangram_futures[word].result()
     for pangram in result:
